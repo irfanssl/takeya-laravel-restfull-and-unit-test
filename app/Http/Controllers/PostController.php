@@ -139,8 +139,37 @@ class PostController extends Controller
     /**
      * Remove / delete the specific post
      */
-    public function destroy()
+    public function destroy(Request $request, Post $post)
     {
-        //
+        $post = $post->load(['author:id']);
+        $postData = $post;
+        if ($post->author->id !== $request->user()->id) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'You are not the author of this post',
+            ];
+
+            return response()->json($data, 422);
+        }
+
+        try {
+            $post->delete();
+            $data = [
+                'status' => 'Success',
+                'data' => $postData,
+                'message' => 'Success deleting a post',
+            ];
+
+            return response()->json($data, 201);
+        } catch (\Throwable $e) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'Fail deleting a post. '.$e->getMessage(),
+            ];
+
+            return response()->json($data, 500);
+        }
     }
 }
