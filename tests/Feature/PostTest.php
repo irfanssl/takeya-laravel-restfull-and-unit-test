@@ -98,4 +98,103 @@ class PostTest extends TestCase
         $this->getJson("/posts/{$draftPost->id}")
             ->assertStatus(201);
     }
+
+    /**
+     * create post testing
+     */
+    public function test_create_posts_is_not_accessible_for_guests(): void
+    {
+        $this->get('/posts/create')
+            ->assertStatus(302)
+            ->assertRedirect('/login');
+    }
+
+    public function test_create_posts_is_accessible_for_authenticated_users(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get('/posts/create')
+            ->assertStatus(200);
+    }
+
+    public function test_create_posts_is_just_return_string(): void
+    {
+        $user = User::factory()->create();
+        $this->actingAs($user)
+            ->get('/posts/create')
+            ->assertStatus(200)
+            ->assertSee('posts.create');
+    }
+
+    public function test_authenticated_users_can_create_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(201)
+            ->assertJsonFragment($postData);
+
+        $this->assertDatabaseHas('posts', [
+            'title' => $postData['title'],
+            'user_id' => $user->id,
+        ]);
+    }
+
+    public function test_unauthenticated_users_cannot_create_a_post(): void
+    {
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->postJson('/posts', $postData)
+            ->assertStatus(401);
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $postData['title'],
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_title_is_required_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('posts', [
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_content_is_required_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('content');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $postData['title'],
+        ]);
+    }
 }
