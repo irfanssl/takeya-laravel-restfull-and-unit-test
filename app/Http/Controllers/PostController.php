@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Post\StorePostRequest;
 use App\Models\Post;
+use Illuminate\Http\Request;
 
 class PostController extends Controller
 {
@@ -70,7 +71,7 @@ class PostController extends Controller
      */
     public function edit()
     {
-        //
+        return 'posts.edit';
     }
 
     /**
@@ -101,9 +102,38 @@ class PostController extends Controller
     /**
      * Update the specific post.
      */
-    public function update()
+    public function update(Request $request, Post $post, StorePostRequest $postRequest)
     {
-        //
+        $post = $post->load('author:id');
+        $postData = $post;
+        if ($post->author->id !== $request->user()->id) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'You are not the author of this post',
+            ];
+
+            return response()->json($data, 422);
+        }
+
+        try {
+            $post->update($postRequest->validated());
+            $data = [
+                'status' => 'Success',
+                'data' => $postData,
+                'message' => 'Success updating a post',
+            ];
+
+            return response()->json($data, 201);
+        } catch (\Throwable $e) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'Fail updating a post. '.$e->getMessage(),
+            ];
+
+            return response()->json($data, 500);
+        }
     }
 
     /**
