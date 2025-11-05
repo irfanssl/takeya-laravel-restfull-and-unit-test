@@ -367,4 +367,67 @@ class PostTest extends TestCase
             'title' => $postData['title'],
         ]);
     }
+
+    /**
+     * delete post testing
+     */
+    public function test_delete_post_is_not_accessible_for_guests(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+
+        $this->deleteJson("/posts/{$post->id}")
+            ->assertStatus(401);
+
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => $post->title,
+            'content' => $post->content,
+        ]);
+    }
+
+    public function test_delete_post_is_accessible_for_authenticated_users(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+
+        $nonAuthor = User::factory()->create();
+        $this->actingAs($nonAuthor)
+            ->deleteJson("/posts/{$post->id}")
+            ->assertStatus(422);
+
+        $this->assertDatabaseHas('posts', [
+            'id' => $post->id,
+            'title' => $post->title,
+            'content' => $post->content,
+        ]);
+    }
+
+    public function test_delete_post_only_author_can_delete_it(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+
+        $this->actingAs($user)
+            ->deleteJson("/posts/{$post->id}")
+            ->assertStatus(201);
+
+        $this->assertDatabaseMissing('posts', [
+            'id' => $post->id,
+            'title' => $post->title,
+            'content' => $post->content,
+        ]);
+    }
 }
