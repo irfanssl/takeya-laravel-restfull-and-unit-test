@@ -60,7 +60,25 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        //
+        $post = $post->with(['author:id,name'])
+            ->first();
+        if ($post->is_draft == 1) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'Post not found',
+            ];
+
+            return response()->json($data, 404);
+        }
+
+        $data = [
+            'status' => 'Success',
+            'data' => $post,
+            'message' => 'Success retrieve a post',
+        ];
+
+        return response()->json($data, 201);
     }
 
     /**

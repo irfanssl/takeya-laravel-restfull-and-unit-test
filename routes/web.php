@@ -22,4 +22,5 @@ require __DIR__.'/auth.php';
  */
 Route::prefix('posts')->name('posts.')->group(function () {
     Route::get('/', [PostController::class, 'index'])->name('index');
+    Route::get('{post}', [PostController::class, 'show'])->name('show');
 });
