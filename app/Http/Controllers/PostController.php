@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\Post\StorePostRequest;
 use App\Models\Post;
 
 class PostController extends Controller
@@ -42,9 +43,26 @@ class PostController extends Controller
     /**
      * Store a newly created post.
      */
-    public function store()
+    public function store(StorePostRequest $request)
     {
-        //
+        try {
+            $post = $request->user()->posts()->create($request->validated());
+            $data = [
+                'status' => 'Success',
+                'data' => $post,
+                'message' => 'Success creating a post',
+            ];
+
+            return response()->json($data, 201);
+        } catch (\Throwable $e) {
+            $data = [
+                'status' => 'Error',
+                'data' => null,
+                'message' => 'Fail creating a post. '.$e->getMessage(),
+            ];
+
+            return response()->json($data, 500);
+        }
     }
 
     /**
