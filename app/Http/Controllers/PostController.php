@@ -60,8 +60,7 @@ class PostController extends Controller
      */
     public function show(Post $post)
     {
-        $post = $post->with(['author:id,name'])
-            ->first();
+        $post = $post->load(['author:id,name']);
         if ($post->is_draft == 1) {
             $data = [
                 'status' => 'Error',
