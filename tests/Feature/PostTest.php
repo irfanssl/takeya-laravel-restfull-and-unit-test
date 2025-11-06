@@ -25,7 +25,46 @@ class PostTest extends TestCase
     {
         $this->get('/posts')
             ->assertStatus(200)
-            ->assertJson([]);
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'current_page',
+                    'data' => [
+                        '*' => [ // '*' artinya semua elemen array harus punya struktur ini
+                            'id',
+                            'user_id',
+                            'title',
+                            'content',
+                            'is_draft',
+                            'published_at',
+                            'created_at',
+                            'author' => [
+                                'id',
+                                'name',
+                                'email',
+                            ],
+                        ],
+                    ],
+                    'first_page_url',
+                    'from',
+                    'last_page',
+                    'last_page_url',
+                    'links' => [
+                        '*' => [
+                            'url',
+                            'label',
+                            'active',
+                        ],
+                    ],
+                    'next_page_url',
+                    'path',
+                    'per_page',
+                    'prev_page_url',
+                    'to',
+                    'total',
+                ],
+            ]);
     }
 
     public function test_posts_index_is_accessible_for_authenticated_user(): void
