@@ -163,7 +163,24 @@ class PostTest extends TestCase
         $this->actingAs($user)
             ->getJson("/posts/{$post->id}")
             ->assertStatus(200)
-            ->assertJson([]);
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'title',
+                    'content',
+                    'is_draft',
+                    'published_at',
+                    'created_at',
+                    'updated_at',
+                    'author' => [
+                        'id',
+                        'name',
+                    ],
+                ],
+            ]);
     }
 
     public function test_post_detail_should_return_404_if_it_is_a_draft_post(): void
@@ -177,7 +194,12 @@ class PostTest extends TestCase
         ]);
 
         $this->getJson("/posts/{$draftPost->id}")
-            ->assertStatus(404);
+            ->assertStatus(404)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
     }
 
     public function test_post_detail_should_return_200_if_it_is_an_active_post(): void
@@ -191,7 +213,25 @@ class PostTest extends TestCase
         ]);
 
         $this->getJson("/posts/{$draftPost->id}")
-            ->assertStatus(200);
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'title',
+                    'content',
+                    'is_draft',
+                    'published_at',
+                    'created_at',
+                    'updated_at',
+                    'author' => [
+                        'id',
+                        'name',
+                    ],
+                ],
+            ]);
     }
 
     /**
