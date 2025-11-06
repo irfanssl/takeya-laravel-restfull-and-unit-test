@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Post\StorePostRequest;
 use App\Models\Post;
-use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
 {
@@ -96,31 +96,29 @@ class PostController extends Controller
             'message' => 'Success retrieve a post',
         ];
 
-        return response()->json($data, 201);
+        return response()->json($data, 200);
     }
 
     /**
      * Update the specific post.
      */
-    public function update(Request $request, Post $post, StorePostRequest $postRequest)
+    public function update(StorePostRequest $postRequest, Post $post)
     {
-        $post = $post->load('author:id');
-        $postData = $post;
-        if ($post->author->id !== $request->user()->id) {
+        if (! Gate::allows('update', $post)) {
             $data = [
                 'status' => 'Error',
                 'data' => null,
-                'message' => 'You are not the author of this post',
+                'message' => "You can't update it, are not the author of this post",
             ];
 
-            return response()->json($data, 422);
+            return response()->json($data, 403);
         }
 
         try {
             $post->update($postRequest->validated());
             $data = [
                 'status' => 'Success',
-                'data' => $postData,
+                'data' => $post,
                 'message' => 'Success updating a post',
             ];
 
@@ -139,25 +137,23 @@ class PostController extends Controller
     /**
      * Remove / delete the specific post
      */
-    public function destroy(Request $request, Post $post)
+    public function destroy(Post $post)
     {
-        $post = $post->load(['author:id']);
-        $postData = $post;
-        if ($post->author->id !== $request->user()->id) {
+        if (! Gate::allows('delete', $post)) {
             $data = [
                 'status' => 'Error',
                 'data' => null,
-                'message' => 'You are not the author of this post',
+                'message' => "You can't delete it, are not the author of this post",
             ];
 
-            return response()->json($data, 422);
+            return response()->json($data, 403);
         }
 
         try {
             $post->delete();
             $data = [
                 'status' => 'Success',
-                'data' => $postData,
+                'data' => $post,
                 'message' => 'Success deleting a post',
             ];
 
