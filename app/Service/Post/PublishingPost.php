@@ -14,9 +14,8 @@ class PublishingPost
 
     private function publish()
     {
-        $posts = Post::where('created_at', '<=', now()->toDateTimeString())
-            ->where('is_draft', 0)
-            ->where('published_at', null)
+        $posts = Post::where('published_at', '<=', now()->toDateTimeString())
+            ->where('is_draft', 1)
             ->select('id')
             ->limit(500) // limit 500 to avoid overload
             ->get();
@@ -26,15 +25,15 @@ class PublishingPost
         try {
             $updated = Post::whereIn('id', $posts->pluck('id'))
                 ->update([
-                    'published_at' => now()->toDateTimeString(),
+                    'is_draft' => 0,
                 ]);
-            Log::info('Successfully updating published_at on table posts', [
+            Log::info('Successfully updating is_draft on table posts', [
                 'count' => $updated,
                 'post_ids' => $posts,
             ]);
 
         } catch (\Throwable $e) {
-            Log::warning('Fail updating published_at on table posts', [
+            Log::warning('Fail updating is_draft on table posts', [
                 'when' => now(),
                 'message' => $e->getMessage(),
             ]);
