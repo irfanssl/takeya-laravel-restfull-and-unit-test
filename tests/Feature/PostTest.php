@@ -51,7 +51,7 @@ class PostTest extends TestCase
         ]);
 
         $this->getJson("/posts/{$post->id}")
-            ->assertStatus(201)
+            ->assertStatus(200)
             ->assertJson([]);
     }
 
@@ -67,7 +67,7 @@ class PostTest extends TestCase
 
         $this->actingAs($user)
             ->getJson("/posts/{$post->id}")
-            ->assertStatus(201)
+            ->assertStatus(200)
             ->assertJson([]);
     }
 
@@ -85,7 +85,7 @@ class PostTest extends TestCase
             ->assertStatus(404);
     }
 
-    public function test_post_detail_should_return_201_if_it_is_an_active_post(): void
+    public function test_post_detail_should_return_200_if_it_is_an_active_post(): void
     {
         $user = User::factory()->create();
         $draftPost = Post::factory()->create([
@@ -96,7 +96,7 @@ class PostTest extends TestCase
         ]);
 
         $this->getJson("/posts/{$draftPost->id}")
-            ->assertStatus(201);
+            ->assertStatus(200);
     }
 
     /**
@@ -315,7 +315,7 @@ class PostTest extends TestCase
 
         $this->actingAs($nonAuthor)
             ->putJson("/posts/{$post->id}", $updateData)
-            ->assertStatus(422);
+            ->assertStatus(403);
 
         $this->assertDatabaseMissing('posts', [
             'id' => $post->id,
@@ -402,7 +402,7 @@ class PostTest extends TestCase
         $nonAuthor = User::factory()->create();
         $this->actingAs($nonAuthor)
             ->deleteJson("/posts/{$post->id}")
-            ->assertStatus(422);
+            ->assertStatus(403);
 
         $this->assertDatabaseHas('posts', [
             'id' => $post->id,
