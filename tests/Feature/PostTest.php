@@ -130,7 +130,24 @@ class PostTest extends TestCase
 
         $this->getJson("/posts/{$post->id}")
             ->assertStatus(200)
-            ->assertJson([]);
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'id',
+                    'user_id',
+                    'title',
+                    'content',
+                    'is_draft',
+                    'published_at',
+                    'created_at',
+                    'updated_at',
+                    'author' => [
+                        'id',
+                        'name',
+                    ],
+                ],
+            ]);
     }
 
     public function test_post_detail_is_accessible_for_authenticated_user(): void
