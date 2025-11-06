@@ -402,6 +402,26 @@ class PostTest extends TestCase
             ]);
     }
 
+    public function test_post_detail_should_return_404_if_it_is_a_scheduled_post(): void
+    {
+        $user = User::factory()->create();
+        $draftPost = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+            'is_draft' => 0,
+            'published_at' => now()->addDays(2)->toDateTimeString(),
+        ]);
+
+        $this->getJson("/posts/{$draftPost->id}")
+            ->assertStatus(404)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
+    }
+
     public function test_post_detail_should_return_200_if_it_is_an_active_post(): void
     {
         $user = User::factory()->create();
