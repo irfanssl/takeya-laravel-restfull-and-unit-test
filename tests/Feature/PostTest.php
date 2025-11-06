@@ -241,6 +241,7 @@ class PostTest extends TestCase
                 'title' => $this->faker->sentence,
                 'is_draft' => 0,
                 'content' => $this->faker->paragraph,
+                'published_at' => now()->subMinutes(3)->toDateTimeString(),
             ]);
 
         Post::factory()
@@ -302,6 +303,15 @@ class PostTest extends TestCase
                 $post['is_draft'],
                 "Post ID {$post['id']} should not draft!"
             );
+            if (! empty($post['published_at'])) {
+                $publishedAt = \Carbon\Carbon::parse($post['published_at']);
+                $now = now();
+
+                $this->assertTrue(
+                    $publishedAt->lessThanOrEqualTo($now),
+                    "Post ID {$post['id']} should not be scheduled! (published_at: {$publishedAt}, now: {$now})"
+                );
+            }
         }
     }
 
