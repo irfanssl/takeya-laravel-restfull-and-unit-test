@@ -24,52 +24,30 @@ class PostTest extends TestCase
     public function test_posts_index_is_accessible_for_guest(): void
     {
         $this->get('/posts')
-            ->assertStatus(200)
-            ->assertJsonStructure([
-                'status',
-                'message',
-                'data' => [
-                    'current_page',
-                    'data' => [
-                        '*' => [ // '*' artinya semua elemen array harus punya struktur ini
-                            'id',
-                            'user_id',
-                            'title',
-                            'content',
-                            'is_draft',
-                            'published_at',
-                            'created_at',
-                            'author' => [
-                                'id',
-                                'name',
-                                'email',
-                            ],
-                        ],
-                    ],
-                    'first_page_url',
-                    'from',
-                    'last_page',
-                    'last_page_url',
-                    'links' => [
-                        '*' => [
-                            'url',
-                            'label',
-                            'active',
-                        ],
-                    ],
-                    'next_page_url',
-                    'path',
-                    'per_page',
-                    'prev_page_url',
-                    'to',
-                    'total',
-                ],
-            ]);
+            ->assertStatus(200);
     }
 
     public function test_posts_index_is_accessible_for_authenticated_user(): void
     {
         $user = User::factory()->create();
+
+        $this->actingAs($user)
+            ->get('/posts')
+            ->assertStatus(200);
+    }
+
+    public function test_post_index_is_return_a_valid_json(): void
+    {
+        $user = User::factory()->create();
+        Post::factory()
+            ->count(25)
+            ->create([
+                'user_id' => $user->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 0,
+                'content' => $this->faker->paragraph,
+            ]);
+
         $this->actingAs($user)
             ->get('/posts')
             ->assertStatus(200)
@@ -113,6 +91,218 @@ class PostTest extends TestCase
                     'total',
                 ],
             ]);
+    }
+
+    public function test_post_index_is_only_consist_20_item_per_page(): void
+    {
+        $user = User::factory()->create();
+        Post::factory()
+            ->count(25)
+            ->create([
+                'user_id' => $user->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 0,
+                'content' => $this->faker->paragraph,
+            ]);
+
+        $response = $this->getJson('/posts');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'current_page',
+                    'data' => [
+                        '*' => [ // '*' artinya semua elemen array harus punya struktur ini
+                            'id',
+                            'user_id',
+                            'title',
+                            'content',
+                            'is_draft',
+                            'published_at',
+                            'created_at',
+                            'author' => [
+                                'id',
+                                'name',
+                                'email',
+                            ],
+                        ],
+                    ],
+                    'first_page_url',
+                    'from',
+                    'last_page',
+                    'last_page_url',
+                    'links' => [
+                        '*' => [
+                            'url',
+                            'label',
+                            'active',
+                        ],
+                    ],
+                    'next_page_url',
+                    'path',
+                    'per_page',
+                    'prev_page_url',
+                    'to',
+                    'total',
+                ],
+            ]);
+
+        $json = $response->json();
+        $totalData = count($json['data']['data']);
+        $this->assertEquals(
+            20,
+            $totalData,
+            'Total data per pege should be 20 items!'
+        );
+    }
+
+    public function test_post_index_should_showing_the_author_per_post(): void
+    {
+        $user = User::factory()->create();
+        Post::factory()
+            ->count(30)
+            ->create([
+                'user_id' => $user->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 0,
+                'content' => $this->faker->paragraph,
+            ]);
+
+        $anotherUser = User::factory()->create();
+        Post::factory()
+            ->count(6)
+            ->create([
+                'user_id' => $anotherUser->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 1,
+                'content' => $this->faker->paragraph,
+            ]);
+
+        $response = $this->getJson('/posts');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'current_page',
+                    'data' => [
+                        '*' => [ // '*' artinya semua elemen array harus punya struktur ini
+                            'id',
+                            'user_id',
+                            'title',
+                            'content',
+                            'is_draft',
+                            'published_at',
+                            'created_at',
+                            'author' => [
+                                'id',
+                                'name',
+                                'email',
+                            ],
+                        ],
+                    ],
+                    'first_page_url',
+                    'from',
+                    'last_page',
+                    'last_page_url',
+                    'links' => [
+                        '*' => [
+                            'url',
+                            'label',
+                            'active',
+                        ],
+                    ],
+                    'next_page_url',
+                    'path',
+                    'per_page',
+                    'prev_page_url',
+                    'to',
+                    'total',
+                ],
+            ]);
+
+        $json = $response->json();
+        foreach ($json['data']['data'] as $post) {
+            $this->assertNotNull(
+                $post['author']['id'],
+                "Author ID {$post['author']['id']} should not null!"
+            );
+        }
+    }
+
+    public function test_post_index_is_only_shown_an_active_post(): void
+    {
+        $user = User::factory()->create();
+        Post::factory()
+            ->count(4)
+            ->create([
+                'user_id' => $user->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 0,
+                'content' => $this->faker->paragraph,
+            ]);
+
+        Post::factory()
+            ->count(6)
+            ->create([
+                'user_id' => $user->id,
+                'title' => $this->faker->sentence,
+                'is_draft' => 1,
+                'content' => $this->faker->paragraph,
+            ]);
+
+        $response = $this->getJson('/posts');
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data' => [
+                    'current_page',
+                    'data' => [
+                        '*' => [ // '*' artinya semua elemen array harus punya struktur ini
+                            'id',
+                            'user_id',
+                            'title',
+                            'content',
+                            'is_draft',
+                            'published_at',
+                            'created_at',
+                            'author' => [
+                                'id',
+                                'name',
+                                'email',
+                            ],
+                        ],
+                    ],
+                    'first_page_url',
+                    'from',
+                    'last_page',
+                    'last_page_url',
+                    'links' => [
+                        '*' => [
+                            'url',
+                            'label',
+                            'active',
+                        ],
+                    ],
+                    'next_page_url',
+                    'path',
+                    'per_page',
+                    'prev_page_url',
+                    'to',
+                    'total',
+                ],
+            ]);
+
+        $json = $response->json();
+        foreach ($json['data']['data'] as $post) {
+            $this->assertEquals(
+                0,
+                $post['is_draft'],
+                "Post ID {$post['id']} should not draft!"
+            );
+        }
     }
 
     /**
