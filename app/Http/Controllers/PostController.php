@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\Post\StorePostRequest;
 use App\Models\Post;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Gate;
 
 class PostController extends Controller
@@ -24,6 +25,7 @@ class PostController extends Controller
                 'created_at'
             )
             ->where('is_draft', 0) // exclude draft posts
+            ->where('published_at', '<=', now()->toDateTimeString())
             ->paginate(20);
 
         return response()->json([
@@ -88,7 +90,7 @@ class PostController extends Controller
     public function show(Post $post)
     {
         $post = $post->load(['author:id,name']);
-        if ($post->is_draft == 1) {
+        if ($post->is_draft == 1 || now()->lt(Carbon::parse($post->published_at))) {
             $data = [
                 'status' => 'Error',
                 'data' => null,
