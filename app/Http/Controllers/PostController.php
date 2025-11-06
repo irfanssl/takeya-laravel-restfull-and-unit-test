@@ -75,7 +75,11 @@ class PostController extends Controller
      */
     public function edit()
     {
-        return 'posts.edit';
+        return response()->json([
+            'status' => 'Success',
+            'message' => 'No content',
+            'data' => null,
+        ], 200);
     }
 
     /**
