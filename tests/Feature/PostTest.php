@@ -156,13 +156,17 @@ class PostTest extends TestCase
             ->assertStatus(200);
     }
 
-    public function test_create_posts_is_just_return_string(): void
+    public function test_create_posts_is_return_json(): void
     {
         $user = User::factory()->create();
         $this->actingAs($user)
             ->get('/posts/create')
             ->assertStatus(200)
-            ->assertSee('posts.create');
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
     }
 
     public function test_authenticated_users_can_create_a_post(): void
@@ -265,10 +269,14 @@ class PostTest extends TestCase
         $this->actingAs($user)
             ->get("/posts/{$post->id}/edit")
             ->assertStatus(200)
-            ->assertSee('posts.edit');
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
     }
 
-    public function test_edit_posts_is_just_return_string(): void
+    public function test_edit_posts_is_return_json(): void
     {
         $user = User::factory()->create();
         $post = Post::factory()->create([
@@ -280,7 +288,11 @@ class PostTest extends TestCase
         $this->actingAs($user)
             ->get("/posts/{$post->id}/edit")
             ->assertStatus(200)
-            ->assertSee('posts.edit');
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
     }
 
     /**
