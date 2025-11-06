@@ -324,6 +324,46 @@ class PostTest extends TestCase
         ]);
     }
 
+    public function test_title_should_be_a_string_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => ['not', 'a', 'string'], // non-string to trigger 'string' validation
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('posts', [
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_title_maximum_is_255_characters_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+        $longTitle = str_repeat('a', 256);
+
+        $postData = [
+            'title' => $longTitle,
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $longTitle,
+            'content' => $postData['content'],
+        ]);
+    }
+
     public function test_content_is_required_when_creating_a_post(): void
     {
         $user = User::factory()->create();
@@ -339,6 +379,90 @@ class PostTest extends TestCase
 
         $this->assertDatabaseMissing('posts', [
             'title' => $postData['title'],
+        ]);
+    }
+
+    public function test_content_should_be_a_string_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => ['not', 'a', 'string'], // non-string to trigger 'string' validation
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('content');
+
+        $this->assertDatabaseMissing('posts', [
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_is_draft_must_be_a_boolean_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+            'is_draft' => 'string',
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('is_draft');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $postData['title'],
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_published_at_must_be_date_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+            'is_draft' => 1, // 0: published ,  1: draft
+            'published_at' => 'string',
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('published_at');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $postData['title'],
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_published_at_must_be_date_and_more_than_now_time_when_creating_a_post(): void
+    {
+        $user = User::factory()->create();
+
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+            'is_draft' => 0, // when the published_at not null, the post should be an active post / published (1)
+            'published_at' => now()->toDateTimeString(),
+        ];
+
+        $this->actingAs($user)
+            ->postJson('/posts', $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('published_at');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $postData['title'],
+            'content' => $postData['content'],
         ]);
     }
 
@@ -498,6 +622,54 @@ class PostTest extends TestCase
         ]);
     }
 
+    public function test_update_post_title_should_be_a_string_when_updating_a_post(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+        $postData = [
+            'title' => ['not', 'a', 'string'], // non-string to trigger 'string' validation
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->putJson("/posts/{$post->id}", $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('posts', [
+            'content' => $postData['content'],
+        ]);
+    }
+
+    public function test_update_post_title_maximum_is_255_characters_when_updating_a_post(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+        $longTitle = str_repeat('a', 256);
+        $postData = [
+            'title' => $longTitle,
+            'content' => $this->faker->paragraph,
+        ];
+
+        $this->actingAs($user)
+            ->putJson("/posts/{$post->id}", $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('title');
+
+        $this->assertDatabaseMissing('posts', [
+            'title' => $longTitle,
+            'content' => $postData['content'],
+        ]);
+    }
+
     public function test_update_post_content_is_required_when_upadating_a_post(): void
     {
         $user = User::factory()->create();
@@ -517,6 +689,29 @@ class PostTest extends TestCase
 
         $this->assertDatabaseMissing('posts', [
             'title' => $postData['title'],
+        ]);
+    }
+
+    public function test_update_post_content_should_be_a_string_when_updating_a_post(): void
+    {
+        $user = User::factory()->create();
+        $post = Post::factory()->create([
+            'user_id' => $user->id,
+            'title' => $this->faker->sentence,
+            'content' => $this->faker->paragraph,
+        ]);
+        $postData = [
+            'title' => $this->faker->sentence,
+            'content' => ['not', 'a', 'string'], // non-string to trigger 'string' validation
+        ];
+
+        $this->actingAs($user)
+            ->putJson("/posts/{$post->id}", $postData)
+            ->assertStatus(422)
+            ->assertJsonValidationErrors('content');
+
+        $this->assertDatabaseMissing('posts', [
+            'content' => $postData['content'],
         ]);
     }
 
