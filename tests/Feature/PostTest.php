@@ -249,7 +249,12 @@ class PostTest extends TestCase
         $user = User::factory()->create();
         $this->actingAs($user)
             ->get('/posts/create')
-            ->assertStatus(200);
+            ->assertStatus(200)
+            ->assertJsonStructure([
+                'status',
+                'message',
+                'data',
+            ]);
     }
 
     public function test_create_posts_is_return_json(): void
