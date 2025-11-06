@@ -38,7 +38,11 @@ class PostController extends Controller
      */
     public function create()
     {
-        return 'posts.create';
+        return response()->json([
+            'status' => 'Success',
+            'message' => 'No content',
+            'data' => null,
+        ], 200);
     }
 
     /**
